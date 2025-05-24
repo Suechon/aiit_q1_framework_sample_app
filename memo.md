@@ -95,12 +95,16 @@ root/
 # 基本構文
 $ rails generate migration Add<カラム名（複数可）To<テーブル名> <カラム名>:<型> ...
 # 例
-# ageを追加
+# ageを追加(snakeでも可能)
+# user.rbには追加したカラムは追加されない
 $ rails generate migration AddAgeToUsers age:integer
 # ageとbioとadminを追加
 $ rails generate migration AddFieldsToUsers age:integer bio:text admin:boolean
 ```
-
+* indexの追加
+``` bash
+$ rails generate migration add_index_to_users_email
+```
 ### コントローラー
 ``` bash
 $ rails generate controller Users new
@@ -154,10 +158,12 @@ root/
 </details>
 
 ### ビュー
-```
-```
 
-### DB
+* `rails generate view`　は存在しない
+  * `rails generate controller `でビューも作られるため
+
+
+## DB
 ``` bash
 $ rails db:migrate
 ```
@@ -177,6 +183,52 @@ $ rails db:migrate
 |rails db:migrate	|マイグレーションを実行（up）|
 |rails db:rollback|	直前のマイグレーションを取り消す（down）|
 |rails db:migrate:status|	実行済み/未実行のマイグレーション一覧を表示|
+
+
+### 操作
+
+memo_db.md参照
+
+## rails console 
+### 接続/終了
+``` bash
+# 基本
+$ rails c
+>> exit
+# sandbox(※railsに接続したところからsandboxモードにはなれない。必ずoption指定して接続すること)
+$ rails console --sandbox 
+$ rails c -s
+
+``` 
+### 操作
+* このときはまだDBを見ているわけではない
+``` ruby
+# Userから作ったオブジェクト。User.newと言うインスタンス
+>> User.new
+=> #<User:0x000074da185c51e0 id: nil, name: nil, email: nil, created_at: nil, updated_at: nil
+
+# Userと結果は同じだが、同じものではない。User.new で作ったインスタンスのクラス
+>> User.new.class
+=> User(id: integer, name: string, email: string, created_at: datetime, updated_at: datetime)
+
+# User クラスそのもの(app/models/unser.rbの中身)
+>> User
+=> User(id: integer, name: string, email: string, created_at: datetime, updated_at: datetime)
+
+# 継承元の表示
+>> User.new.class.superclass
+=> ApplicationRecord(abstract)
+```
+
+
+## テスト
+
+* テスト実行コマンド
+  * test/models/ のテストだけを実行
+``` bash
+$ rails test:models
+```
+
 
 ## Ruby on Railsにおける用語
 |用語|意味|
