@@ -163,9 +163,16 @@ root/
   * `rails generate controller `でビューも作られるため
 
 
-## DB
+
+### TEST
+```
+rails generate integration_test users_signup
+```
+### DB
 ``` bash
 $ rails db:migrate
+# リセット
+$ rails db:migrate:reset
 ```
 
 `db/migrate/タイムスタンプ_～.rb`(モデルを作成したときにできるファイル)をもとにDBが作成される
@@ -234,12 +241,24 @@ $ rails test:models
 |用語|意味|
 |--|--|
 |マイグレーション|移動や移行|
+|ERB|Ruby on Railsのテンプレートエンジン|
 
 
+## router周辺
+
+
+
+|ディレクトリ・ファイル名|役割|
+|routes.rb|URLとコントローラ・アクションの対応を定義|
+|controllers/users_controller.rb|URLに対応する処理を行うアクションを定義|
+
+|views/static_pages/about.html.erb|about アクションに対応するHTMLビュー|
+|views/layouts/application.html.erb|全ビューに共通するHTMLレイアウト|
+|views/users/new.html.erb	|users#newに対応するユーザー登録画面ビュー|
 
 ```mermaid
 graph TD;
-    A-->B;
+    users(仮のアクション)-->B;
     A-->C;
     B-->D;
     C-->D;
