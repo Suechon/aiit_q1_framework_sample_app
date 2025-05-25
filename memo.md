@@ -178,11 +178,12 @@ $ rails db:migrate:reset
 `db/migrate/タイムスタンプ_～.rb`(モデルを作成したときにできるファイル)をもとにDBが作成される
 
 * 生成されるファイル一覧
+
 |ファイルパス|説明|
 |--|--|
 |db/development.sqlite3|SQLiteで作られた「実際のデータベースファイル」|
 |db/schema.rb（または db/structure.sql）|現在のDB構造を表すファイル|
-|schema_migrations テーブル（DB内）|のマイグレーションがすでに実行済みか（=up済み）を記録している|
+|schema_migrations |テーブル（DB内）のマイグレーションがすでに実行済みか（=up済み）を記録している|
 
 
 |コマンド|内容|
@@ -246,20 +247,107 @@ $ rails test:models
 
 ## router周辺
 
+``` ruby
+ails.application.routes.draw do
+  root 'static_pages#home'
+  get 'sessions/new'
+  get  '/help',    to: 'static_pages#help'
+  resources :users
+  get    "/login",   to: "sessions#new"
+  post   "/login",   to: "sessions#create"
+  delete "/logout",  to: "sessions#destroy"
+end
+```
 
+* root
+* get 'sessions/new'
+  * [パス名]と[コントローラ#アクション]のパターンが同じ時のみ使える省略記法
+  * `get 'sessions/new', to: 'sessions#new'`とほぼ同義
+  * URL: `sessions/new`
+  * controller: `sessions_controller.rb`
+  * action: `new` (SessionsController.rbの中にnew関数がある)
+* get  '/help',    to: 'static_pages#help'
+  * `/help`専用のControllerがないので、helpが実装してあるファイルとアクションを明示的に指定する
+    * DBを使わない静的ページだけなら専用Controller作らないほうがシンプルで良い
+  * URL: `/help`
+  * controller: `static_pages_controller.rb`
+  * action: `help`
+* resources
+  * よくある操作のルーティングをまとめて登録してくれる
+
+  |method|path|コントローラー#アクション|
+  |--|--|--|
+  |GET|/users|users#index|
+  |GET|/users/new|users#new|
+  |GET|/users/:id|users#show|
+  |GET|/users/:id/edit|users#edit|
+  |POST|/users|users#create|
+  |PATCH/PUT|/users/:id|users#update|
+  |DELETE|/users|users#destroy|
+
+  * resource**s**ではなくresourceもある
+
+  |method|path|コントローラー#アクション|
+  |--|--|--|
+  |GET|/users|users#show|
+  |GET|/users/new|users#new|
+  |GET|/users/edit|users#edit|
+  |POST|/users|users#create|
+  |PATCH/PUT|/users|users#update|
+  |DELETE|/users|users#destroy|
 
 |ディレクトリ・ファイル名|役割|
-|routes.rb|URLとコントローラ・アクションの対応を定義|
+|--|--|
+| routes.rb|URLとコントローラ・アクションの対応を定義|
 |controllers/users_controller.rb|URLに対応する処理を行うアクションを定義|
 
-|views/static_pages/about.html.erb|about アクションに対応するHTMLビュー|
-|views/layouts/application.html.erb|全ビューに共通するHTMLレイアウト|
-|views/users/new.html.erb	|users#newに対応するユーザー登録画面ビュー|
+
+(app.controllersはapp/controllers)
+```mermaid
+classDiagram
+  app.controllers : users_controller.rb
+  app.controllers : show()
+  app.controllers : new()
+  view.users : new.html.erb
+  view.users : show.html.erb
+  app.controllers .. view.users
+```
+
+## 処理の流れ
+### ログアウト
+* 流れ
+1. ブラウザで「ログアウト」ボタンを押す
+2. DELETEメソッドの/logout のリクエストが発生
+3. ルーティングにより SessionsController#destroy が呼ばれる(router.rb→SessionsController.rbのdestoryメソッド)
+4. destoryメソッド中で log_out（SessionsHelper内）を呼ぶ
+5. セッションがリセットされ、ログアウト完了
+6. redirect_to root_url でトップページへ移動
 
 ```mermaid
-graph TD;
-    users(仮のアクション)-->B;
-    A-->C;
-    B-->D;
-    C-->D;
+sequenceDiagram
+  participant User as ブラウザユーザー
+  participant Browser as ブラウザ
+  participant Router as ルーティング<br>(router.rb)
+  participant Controller as sessions_controller.rb
+  participant Helper as sessions_helper.rb
+
+  User->>Browser: 「ログアウト」ボタンをクリック
+  Browser->>Router: DELETEメソッドの /logout
+  Router->>Controller: destroy アクション実行
+  Controller->>Helper: log_out()
+  Helper->>Helper: reset_session / current_user = nil
+  Controller->>Browser: redirect_to root_url
 ```
+
+* クラス図
+
+```mermaid
+graph TD
+  A["controllers/sessions_controller.rb<br>────────────────<br>def destroy()<br>  logout"]
+  B["controllers/application_controller.rb<br>────────────────<br>include SessionsHelper()"]
+  C["helper/sessions_helper.rb<br>────────────────<br>logout()"]
+  A-->C
+  A-.->B
+  
+  ```
+  

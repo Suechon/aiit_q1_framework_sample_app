@@ -7,4 +7,14 @@ class User < ApplicationRecord
                     uniqueness: true
   has_secure_password # 機能を追加するマクロ,パスワードの保存・認証機能をモデルに追加
   validates :password, presence: true, length: { minimum: 6 }
+
+  # 渡された文字列のハッシュ値を返す
+  def self.digest(string)
+    cost = if ActiveModel::SecurePassword.min_cost
+             BCrypt::Engine::MIN_COST
+           else
+             BCrypt::Engine.cost
+           end
+    BCrypt::Password.create(string, cost: cost)
+  end
 end
